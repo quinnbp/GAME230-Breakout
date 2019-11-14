@@ -16,18 +16,47 @@ class Brick {
 public:
 	Brick();
 	void draw(RenderWindow* window);
-	void update(int dt_ms);
 	void setPosition(Vector2f newpos);
 	Vector2f getPosition();
 	Vector2f getSize();
+	bool isActive();
+	void setActive(bool state);
 private:
 	Vector2f position;
 	RectangleShape shape;
 	Vector2f size;
+	bool active;
 };
 
 Brick::Brick() {
+	this->position = Vector2f(0.0f, 0.0f);
+	this->size = Vector2f(5.0f, 3.0f);
 
+	this->shape = RectangleShape(this->size);
+}
+
+void Brick::draw(RenderWindow* window) {
+	window->draw(this->shape);
+}
+
+bool Brick::isActive() {
+	return this->active;
+}
+
+void Brick::setActive(bool state) {
+	this->active = state;
+}
+
+Vector2f Brick::getSize() {
+	return this->size;
+}
+
+void Brick::setPosition(Vector2f newpos) {
+	this->position = newpos;
+}
+
+Vector2f Brick::getPosition() {
+	return this->position;
 }
 
 class Paddle {
@@ -40,6 +69,7 @@ public:
 	void setVelocity(float newvel);
 	float getVelocity();
 	Vector2f getSize();
+	Color color;
 private:
 	Vector2f position;
 	float velocity_x;
@@ -56,11 +86,14 @@ Paddle::Paddle() {
 	this->baseVelocity = 0.4f;
 
 	this->shape = RectangleShape(this->size);
+
+	this->color = Color(255, 255, 255);
 }
 
 void Paddle::update(int dt_ms) {
 	// update position based on velocity
 	this->position.x += this->velocity_x * dt_ms;
+	this->shape.setFillColor(this->color);
 }
 
 void Paddle::draw(RenderWindow* window) {
@@ -162,6 +195,51 @@ Vector2f Ball::getVelocity() {
 	return this->velocity;
 }
 
+/*
+Checks for circle-rectangle collisions for the ball and paddle
+bp is the CENTER position of the circle, pp is the TOP LEFT of the paddle
+*/
+bool collisionRectangle(Ball* ball, Paddle* paddle) {
+	Vector2f bp = ball->getPosition();
+	float br = ball->getRadius();
+	Vector2f pp = paddle->getPosition();
+	Vector2f ps = paddle->getSize();
+
+	float testX = bp.x;
+	float testY = bp.y;
+	if (bp.x < pp.x) {
+		// ball center left from left edge
+		testX = pp.x;
+	}
+	else if (bp.x > pp.x + ps.x) {
+		// ball center right of right edge
+		testX = pp.x + ps.x;
+	}
+	// else ball center within x range
+
+	if (bp.y < pp.y) {
+		// ball center up from top edge
+		testY = pp.y;
+	}
+	else if (bp.y > pp.y + ps.y) {
+		// ball center down from bottom edge
+		testY = pp.y + ps.y;
+	}
+	// else ball center within y range
+
+	// calculate pythagorean distance from ball to closest edge
+	float distX = bp.x - testX;
+	float distY = bp.y - testY;
+	float pythagDist = sqrt((distX * distX) + (distY * distY));
+
+	if (pythagDist <= br) { // pythag collision
+		return true;
+	}
+	else {
+		return false;
+	}
+}
+
 int main() {
 	RenderWindow window(VideoMode(WINDOW_WIDTH, WINDOW_HEIGHT), "Breakout");
 	window.setVerticalSyncEnabled(true);
@@ -189,6 +267,10 @@ int main() {
 			if (event.type == Event::Closed) {
 				window.close();
 			}
+		}
+
+		if (collisionRectangle(&ball, &paddle)) {
+			paddle.color = Color(255, 0, 0);
 		}
 
 		window.clear(Color(0, 0, 0));
