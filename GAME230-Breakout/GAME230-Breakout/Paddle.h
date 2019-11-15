@@ -14,7 +14,7 @@ class Paddle {
 public:
 	Paddle();
 	void draw(RenderWindow* window);
-	void update(int dt_ms, int windowWidth, int windowHeight);
+	void update(int dt_ms, int windowWidth, bool left, bool right);
 	void setPosition(Vector2f newpos);
 	Vector2f getPosition();
 	void setVelocity(float newvel);

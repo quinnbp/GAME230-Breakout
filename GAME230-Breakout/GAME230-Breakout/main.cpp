@@ -17,6 +17,13 @@ const int WINDOW_WIDTH = 1024;
 const int WINDOW_HEIGHT = 768;
 
 /*
+Calculates pythagorean distance between two points given as Vector2f
+*/
+float pythagDist(Vector2f p1, Vector2f p2) {
+	return sqrt((p1.x - p2.x) * (p1.x - p2.x) + (p1.y - p2.y) * (p1.y - p2.y));
+}
+
+/*
 Checks for circle-rectangle collisions for the ball and paddle
 bp is the CENTER position of the circle, pp is the TOP LEFT of the paddle
 br is the radius of the circle, ps is the (w, h) of the rect
@@ -44,12 +51,7 @@ bool circleRectCollision(Vector2f bp, float br, Vector2f pp, Vector2f ps) {
 	}
 	// else ball center within y range
 
-	// calculate pythagorean distance from ball to closest edge
-	float distX = bp.x - testX;
-	float distY = bp.y - testY;
-	float pythagDist = sqrt((distX * distX) + (distY * distY));
-
-	if (pythagDist <= br) { // pythag collision
+	if (pythagDist(bp, Vector2f(testX, testY)) <= br) { // pythag collision
 		return true;
 	}
 	else {
@@ -62,10 +64,11 @@ int main() {
 	window.setVerticalSyncEnabled(true);
 	window.setKeyRepeatEnabled(false);
 
-
 	Clock clock = Clock();
 	int dt_ms = 0;
 
+	bool leftKeyPressed = false;
+	bool rightKeyPressed = false;
 
 	Ball ball = Ball();
 	ball.setPosition(Vector2f(WINDOW_WIDTH / 2.0f, WINDOW_HEIGHT / 2.0f));
@@ -85,17 +88,34 @@ int main() {
 			if (event.type == Event::Closed) {
 				window.close();
 			}
+			else if (event.type == Event::KeyPressed) {
+				if (event.key.code == Keyboard::Left) {
+					leftKeyPressed = true;
+				}
+				else if (event.key.code == Keyboard::Right) {
+					rightKeyPressed = true;
+				}
+			}
+			else if (event.type == Event::KeyReleased) {
+				if (event.key.code == Keyboard::Left) {
+					leftKeyPressed = false;
+				}
+				else if (event.key.code == Keyboard::Right) {
+					rightKeyPressed = false;
+				}
+			}
 		}
 
 		if (circleRectCollision(ball.getPosition(), ball.getRadius(), paddle.getPosition(), paddle.getSize())) {
 			// do bounce things
 			collisionColor = Color(255, 0, 0);
+			//ball.bounce();
 		}
 
 		window.clear(collisionColor);
 
 		ball.update(dt_ms, WINDOW_WIDTH, WINDOW_HEIGHT);
-		paddle.update(dt_ms, WINDOW_WIDTH, WINDOW_HEIGHT);
+		paddle.update(dt_ms, WINDOW_WIDTH, leftKeyPressed, rightKeyPressed);
 
 		ball.draw(&window);
 		paddle.draw(&window);
