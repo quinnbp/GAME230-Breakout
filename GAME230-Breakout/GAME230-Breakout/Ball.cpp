@@ -1,4 +1,8 @@
 #include "Ball.h"
+#include "Paddle.h"
+
+
+const double PI = 3.14159265358979323846264388;
 
 Ball::Ball() {
 	this->position = Vector2f(0.0f, 0.0f);
@@ -6,6 +10,40 @@ Ball::Ball() {
 
 	this->radius = 5.0f;
 	this->shape = CircleShape(this->radius);
+}
+
+void Ball::bouncePaddle(Paddle* paddle) {
+	// get magnitude so as to keep consistent
+	float magnitude = sqrt( this->velocity.x * this->velocity.x + this->velocity.y * this->velocity.y );
+
+	// get midpoint of paddle, and distance from midpoint to ball x
+	float paddleMidpoint = paddle->getPosition().x + (paddle->getSize().x / 2.0f);
+	float paddleMidToBall = paddleMidpoint - this->getPosition().x;
+
+	// which x direction to bounce (as in breakout)
+	int xBounceMod = 1;
+	if (paddleMidToBall > 0) { // left of middle
+		xBounceMod = -1;
+	}
+	else { // right of middle
+		paddleMidToBall *= -1;
+	}
+
+	// get ratio of ball distance along paddle to size of paddle, should be 0-1 but is constrained anyway
+	float angleRatio = paddleMidToBall / (paddle->getSize().x / 2.0f);
+	if (angleRatio > 1) {
+		angleRatio = 1;
+	}
+
+	// what angle to bounce (as in breakout)
+	float thetaDegrees = 90.0f - 60.0f * angleRatio; // max 90, min 30
+	float theta = thetaDegrees * PI / 180.0f; // conv to radians
+	float newXV = magnitude * cos(theta); // calc new components, always positive
+	float newYV = magnitude * sin(theta);
+
+	// set new vel comps
+	this->velocity.x = newXV * xBounceMod;
+	this->velocity.y = -1.0f * newYV;
 }
 
 void Ball::update(int dt_ms, int windowWidth, int windowHeight) {

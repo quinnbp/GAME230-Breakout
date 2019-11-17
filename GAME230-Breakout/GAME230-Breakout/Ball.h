@@ -8,6 +8,9 @@
 #include <SFML/OpenGL.hpp>
 #include <SFML/Main.hpp>
 
+#include "Paddle.h"
+#include "Brick.h"
+
 using namespace sf;
 
 class Ball {
@@ -20,6 +23,8 @@ public:
 	float getRadius();
 	void draw(RenderWindow* window);
 	void update(int dt_ms, int windowWidth, int windowHeight);
+	void bouncePaddle(Paddle* paddle);
+	void bounceBrick(Brick* brick);
 private:
 	Vector2f position;
 	Vector2f velocity;

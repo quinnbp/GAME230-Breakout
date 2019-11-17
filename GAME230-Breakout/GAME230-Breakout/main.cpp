@@ -72,11 +72,20 @@ int main() {
 
 	Ball ball = Ball();
 	ball.setPosition(Vector2f(WINDOW_WIDTH / 2.0f, WINDOW_HEIGHT / 2.0f));
-	ball.setVelocity(Vector2f(0.3f, 0.5f));
+	ball.setVelocity(Vector2f(0.0f, 0.5f));
 	Paddle paddle = Paddle();
 	paddle.setPosition(Vector2f(WINDOW_WIDTH / 2.0f, WINDOW_HEIGHT - 15.0f));
 
-	Color collisionColor = Color(0, 0, 0);
+	sf::Font font;
+	if (!font.loadFromFile("arial.ttf")) {
+		exit(-1);
+	}
+
+	Text debugText;
+	debugText.setPosition(WINDOW_WIDTH / 2.0f, WINDOW_HEIGHT / 2.0f);
+	debugText.setFont(font);
+	debugText.setFillColor(Color::White);
+	debugText.setString("");
 
 	while (window.isOpen()) {
 
@@ -108,17 +117,19 @@ int main() {
 
 		if (circleRectCollision(ball.getPosition(), ball.getRadius(), paddle.getPosition(), paddle.getSize())) {
 			// do bounce things
-			collisionColor = Color(255, 0, 0);
-			//ball.bounce();
+			ball.bouncePaddle(&paddle);
+			ball.setPosition(Vector2f(ball.getPosition().x, paddle.getPosition().y - ball.getRadius()));
 		}
 
-		window.clear(collisionColor);
+		window.clear(Color(0, 0, 0));
 
 		ball.update(dt_ms, WINDOW_WIDTH, WINDOW_HEIGHT);
 		paddle.update(dt_ms, WINDOW_WIDTH, leftKeyPressed, rightKeyPressed);
 
 		ball.draw(&window);
 		paddle.draw(&window);
+
+		// window.draw(debugText);
 
 		window.display();
 	}
