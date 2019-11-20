@@ -4,12 +4,30 @@
 
 const double PI = 3.14159265358979323846264388;
 
+enum { FREE, OFFSCREEN, ONPADDLE };
+
 Ball::Ball() {
 	this->position = Vector2f(0.0f, 0.0f);
 	this->velocity = Vector2f(0.0f, 0.0f);
 
 	this->radius = 5.0f;
 	this->shape = CircleShape(this->radius);
+	this->state = FREE;
+}
+
+void Ball::setState(int state) {
+	this->state = state;
+}
+
+int Ball::getState() {
+	return this->state;
+}
+
+void Ball::bounceBrick(Brick* brick) {
+	brick->setActive(false);
+	if (this->velocity.y < 0) {
+		this->velocity.y *= -1.0f;
+	}
 }
 
 void Ball::bouncePaddle(Paddle* paddle) {
@@ -52,8 +70,10 @@ void Ball::update(int dt_ms, int windowWidth, int windowHeight) {
 	this->position.y += this->velocity.y * dt_ms;
 
 	if (this->position.y + this->radius > windowHeight) {
-		this->position.y = windowHeight - this->radius;
-		this->velocity.y *= -1;
+		// pass as we are below board
+		if (this->state == FREE) {
+			this->state = OFFSCREEN;
+		}
 	}
 	else if (this->position.y - this->radius < 0) {
 		this->position.y = this->radius;

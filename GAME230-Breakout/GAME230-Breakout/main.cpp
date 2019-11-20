@@ -13,8 +13,10 @@
 using namespace std;
 using namespace sf;
 
-const int WINDOW_WIDTH = 1024;
-const int WINDOW_HEIGHT = 768;
+const int WINDOW_WIDTH = 1000;
+const int WINDOW_HEIGHT = 750;
+
+enum { FREE, OFFSCREEN, ONPADDLE };
 
 /*
 Calculates pythagorean distance between two points given as Vector2f
@@ -64,23 +66,59 @@ int main() {
 	window.setVerticalSyncEnabled(true);
 	window.setKeyRepeatEnabled(false);
 
+	// timing setup
 	Clock clock = Clock();
 	int dt_ms = 0;
 
+	// key bools
 	bool leftKeyPressed = false;
 	bool rightKeyPressed = false;
 
+	// tracker vars
+	int lives = 3;
+	bool ballReleased = false; // used for on-paddle state to know if ball has been sent
+
+	// construct gameplay objects
 	Ball ball = Ball();
 	ball.setPosition(Vector2f(WINDOW_WIDTH / 2.0f, WINDOW_HEIGHT / 2.0f));
 	ball.setVelocity(Vector2f(0.0f, 0.5f));
+
 	Paddle paddle = Paddle();
 	paddle.setPosition(Vector2f(WINDOW_WIDTH / 2.0f, WINDOW_HEIGHT - 15.0f));
+	paddle.setMouseControl(true);
 
+	vector<Brick> bricks;
+	int cols = 0;
+	int rows = 0;
+	for (int i = 0; i < 5; i++) {
+		for (int j = 0; j < 10; j++) {
+			Brick brick = Brick();
+			brick.setPosition(Vector2f(cols, rows));
+			bricks.push_back(brick);
+			cols += 100;
+		}
+		rows += 30;
+		cols = 0;
+	}
+
+	// load fonts
 	sf::Font font;
 	if (!font.loadFromFile("arial.ttf")) {
 		exit(-1);
 	}
+	sf::Font spaceFont;
+	if (!spaceFont.loadFromFile("spacefont.otf")) {
+		exit(-1);
+	}
 
+	// lives text
+	Text livesText;
+	livesText.setPosition(WINDOW_WIDTH - 50.0f, WINDOW_HEIGHT / 2.0f);
+	livesText.setFont(font);
+	livesText.setFillColor(Color::White);
+	livesText.setString(to_string(lives));
+
+	// debug text
 	Text debugText;
 	debugText.setPosition(WINDOW_WIDTH / 2.0f, WINDOW_HEIGHT / 2.0f);
 	debugText.setFont(font);
@@ -89,9 +127,11 @@ int main() {
 
 	while (window.isOpen()) {
 
+		// frame timing
 		dt_ms = clock.getElapsedTime().asMilliseconds();
 		clock.restart();
 
+		// poll for control and system events
 		Event event;
 		while (window.pollEvent(event)) {
 			if (event.type == Event::Closed) {
@@ -104,6 +144,11 @@ int main() {
 				else if (event.key.code == Keyboard::Right) {
 					rightKeyPressed = true;
 				}
+				else if (event.key.code == Keyboard::Space) {
+					if (ball.getState() == ONPADDLE) {
+						ballReleased = true;
+					}
+				}
 			}
 			else if (event.type == Event::KeyReleased) {
 				if (event.key.code == Keyboard::Left) {
@@ -115,22 +160,65 @@ int main() {
 			}
 		}
 
-		if (circleRectCollision(ball.getPosition(), ball.getRadius(), paddle.getPosition(), paddle.getSize())) {
-			// do bounce things
-			ball.bouncePaddle(&paddle);
-			ball.setPosition(Vector2f(ball.getPosition().x, paddle.getPosition().y - ball.getRadius()));
+		// update dynamic game objects
+		ball.update(dt_ms, WINDOW_WIDTH, WINDOW_HEIGHT);
+		paddle.updateDelegator(dt_ms, WINDOW_WIDTH, leftKeyPressed, rightKeyPressed, Mouse::getPosition(window));
+
+		if (ball.getState() == OFFSCREEN) { // if ball is below screen
+			// lose a life
+			lives--;
+			livesText.setString(to_string(lives));
+			// TODO: Logic here to end the game 
+
+			// remove velocity and set to paddle state
+			ball.setVelocity(Vector2f(0.0f, 0.0f));
+			ball.setState(ONPADDLE);
+
+			debugText.setString("OFFSCREEN");
+		}
+		else if (ball.getState() == ONPADDLE) { // if ball on paddle
+			// set ball to paddle midpoint
+			ball.setPosition(Vector2f(paddle.getPosition().x + paddle.getSize().x / 2.0f, paddle.getPosition().y - ball.getRadius())); 
+			if (ballReleased) {
+				ballReleased = false;
+				ball.setState(FREE);
+				ball.setVelocity(Vector2f(0.0f, 0.5f));
+			}
+			debugText.setString("ONPADDLE");
+		}
+		else if (ball.getState() == FREE) { // we are in active state so check collisions
+			// check ball-paddle collision
+			if (circleRectCollision(ball.getPosition(), ball.getRadius(), paddle.getPosition(), paddle.getSize())) {
+				// do bounce things
+				ball.bouncePaddle(&paddle);
+				ball.setPosition(Vector2f(ball.getPosition().x, paddle.getPosition().y - ball.getRadius()));
+			}
+
+			// check ball-brick collision
+			for (auto& brick : bricks) {
+				if (circleRectCollision(ball.getPosition(), ball.getRadius(), brick.getPosition(), brick.getSize())) {
+					if (brick.isActive()) {
+						ball.bounceBrick(&brick);
+						ball.setPosition(Vector2f(ball.getPosition().x, brick.getPosition().y + brick.getSize().y + ball.getRadius()));
+					}
+				}
+			}
+
+			debugText.setString("FREE");
+
 		}
 
 		window.clear(Color(0, 0, 0));
 
-		ball.update(dt_ms, WINDOW_WIDTH, WINDOW_HEIGHT);
-		paddle.update(dt_ms, WINDOW_WIDTH, leftKeyPressed, rightKeyPressed);
-
+		// draw objects
 		ball.draw(&window);
 		paddle.draw(&window);
+		for (Brick &brick : bricks) {
+			brick.draw(&window);
+		}
 
-		// window.draw(debugText);
-
+		window.draw(debugText);
+		window.draw(livesText);
 		window.display();
 	}
 

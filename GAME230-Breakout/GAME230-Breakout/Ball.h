@@ -25,9 +25,12 @@ public:
 	void update(int dt_ms, int windowWidth, int windowHeight);
 	void bouncePaddle(Paddle* paddle);
 	void bounceBrick(Brick* brick);
+	int getState();
+	void setState(int state);
 private:
 	Vector2f position;
 	Vector2f velocity;
 	CircleShape shape;
 	float radius;
+	int state;
 };

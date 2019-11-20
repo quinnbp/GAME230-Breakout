@@ -14,14 +14,16 @@ class Brick {
 public:
 	Brick();
 	void draw(RenderWindow* window);
+	void update();
 	void setPosition(Vector2f newpos);
 	Vector2f getPosition();
 	Vector2f getSize();
 	bool isActive();
 	void setActive(bool state);
+	bool active;
 private:
 	Vector2f position;
 	RectangleShape shape;
 	Vector2f size;
-	bool active;
+	
 };
