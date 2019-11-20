@@ -111,6 +111,21 @@ int main() {
 		exit(-1);
 	}
 
+	// load sounds
+	sf::SoundBuffer buffer_impact;
+	if (!buffer_impact.loadFromFile("impact.wav")) {
+		return -1;
+	}
+	sf::Sound sfx_impact;
+	sfx_impact.setBuffer(buffer_impact);
+
+	sf::SoundBuffer buffer_brick;
+	if (!buffer_brick.loadFromFile("brick collide.flac")) {
+		return -1;
+	}
+	sf::Sound sfx_brickCollide;
+	sfx_brickCollide.setBuffer(buffer_brick);
+
 	// lives text
 	Text livesText;
 	livesText.setPosition(WINDOW_WIDTH - 50.0f, WINDOW_HEIGHT / 2.0f);
@@ -189,17 +204,20 @@ int main() {
 		else if (ball.getState() == FREE) { // we are in active state so check collisions
 			// check ball-paddle collision
 			if (circleRectCollision(ball.getPosition(), ball.getRadius(), paddle.getPosition(), paddle.getSize())) {
-				// do bounce things
+				// do paddle bounce things
 				ball.bouncePaddle(&paddle);
 				ball.setPosition(Vector2f(ball.getPosition().x, paddle.getPosition().y - ball.getRadius()));
+				sfx_impact.play();
 			}
 
 			// check ball-brick collision
 			for (auto& brick : bricks) {
 				if (circleRectCollision(ball.getPosition(), ball.getRadius(), brick.getPosition(), brick.getSize())) {
 					if (brick.isActive()) {
+						// TODO: put better logic here for if hit side of brick
 						ball.bounceBrick(&brick);
-						ball.setPosition(Vector2f(ball.getPosition().x, brick.getPosition().y + brick.getSize().y + ball.getRadius()));
+						//ball.setPosition(Vector2f(ball.getPosition().x, brick.getPosition().y + brick.getSize().y + ball.getRadius()));
+						sfx_brickCollide.play();
 					}
 				}
 			}
