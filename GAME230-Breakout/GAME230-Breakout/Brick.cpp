@@ -1,6 +1,6 @@
 #include "Brick.h"
 
-Brick::Brick() {
+Brick::Brick(const Texture* texture) {
 	this->position = Vector2f(0.0f, 0.0f);
 	this->size = Vector2f(100.0f, 30.0f);
 
@@ -11,6 +11,7 @@ Brick::Brick() {
 	this->shape.setFillColor(Color::White);
 	this->shape.setOutlineColor(Color::Black);
 	this->shape.setOutlineThickness(-2);
+	this->shape.setTexture(texture);
 }
 
 void Brick::update() {

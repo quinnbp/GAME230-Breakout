@@ -1,12 +1,15 @@
 #include "Paddle.h"
 
-Paddle::Paddle() {
+enum {MOUSE, KEYBOARD, AI};
+
+Paddle::Paddle(Texture* texture) {
 	this->position = Vector2f(0.0f, 0.0f);
 	this->velocity_x = 0.0f;
 	this->size = Vector2f(70.0f, 10.0f);
 	this->baseVelocity = 0.5f;
 	this->shape = RectangleShape(this->size);
-	this->mouseControl = false;
+	this->shape.setTexture(texture);
+	this->controls = KEYBOARD;
 }
 
 void Paddle::checkBounds(int windowWidth) {
@@ -18,14 +21,32 @@ void Paddle::checkBounds(int windowWidth) {
 	}
 }
 
-void Paddle::updateDelegator(int dt_ms, int windowWidth, bool left, bool right, Vector2i mousePos) {
+void Paddle::updateDelegator(int dt_ms, int windowWidth, bool left, bool right, Vector2i mousePos, Vector2f ballPosition) {
 	// delegate how control works based on chosen control scheme
-	if (this->mouseControl) {
+	if (this->controls == MOUSE) {
 		this->updateMouse(windowWidth, mousePos);
+	}
+	else if (this->controls == AI) {
+		this->updateAi(dt_ms, windowWidth, ballPosition);
 	}
 	else {
 		this->updateKeyboard(dt_ms, windowWidth, left, right);
 	}
+}
+
+void Paddle::updateAi(int dt_ms, int windowWidth, Vector2f ballPositon) {
+	if (ballPositon.x > this->position.x + this->size.x) {
+		this->velocity_x = this->baseVelocity;
+	}
+	else if (ballPositon.x < this->position.x) {
+		this->velocity_x = -1.0f * this->baseVelocity;
+	}
+	else {
+		this->velocity_x = 0.0f;
+	}
+
+	this->position.x += this->velocity_x * dt_ms;
+	this->checkBounds(windowWidth);
 }
 
 void Paddle::updateMouse(int windowWidth, Vector2i mousePos) {
@@ -75,6 +96,6 @@ float Paddle::getVelocity() {
 	return this->velocity_x;
 }
 
-void Paddle::setMouseControl(bool state) {
-	this->mouseControl = state;
+void Paddle::setControls(int state) {
+	this->controls = state;
 }

@@ -12,7 +12,7 @@ using namespace sf;
 
 class Brick {
 public:
-	Brick();
+	Brick(const Texture* texture);
 	void draw(RenderWindow* window);
 	void update();
 	void setPosition(Vector2f newpos);

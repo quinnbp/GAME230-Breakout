@@ -12,7 +12,10 @@ Ball::Ball() {
 
 	this->radius = 5.0f;
 	this->shape = CircleShape(this->radius);
-	this->state = FREE;
+	this->colorCycleCount = 0;
+
+	this->state = ONPADDLE;
+	this->speed = 0.4;
 }
 
 void Ball::setState(int state) {
@@ -31,9 +34,6 @@ void Ball::bounceBrick(Brick* brick) {
 }
 
 void Ball::bouncePaddle(Paddle* paddle) {
-	// get magnitude so as to keep consistent
-	float magnitude = sqrt( this->velocity.x * this->velocity.x + this->velocity.y * this->velocity.y );
-
 	// get midpoint of paddle, and distance from midpoint to ball x
 	float paddleMidpoint = paddle->getPosition().x + (paddle->getSize().x / 2.0f);
 	float paddleMidToBall = paddleMidpoint - this->getPosition().x;
@@ -56,18 +56,27 @@ void Ball::bouncePaddle(Paddle* paddle) {
 	// what angle to bounce (as in breakout)
 	float thetaDegrees = 90.0f - 60.0f * angleRatio; // max 90, min 30
 	float theta = thetaDegrees * PI / 180.0f; // conv to radians
-	float newXV = magnitude * cos(theta); // calc new components, always positive
-	float newYV = magnitude * sin(theta);
+	float newXV = this->speed * cos(theta); // calc new components, always positive
+	float newYV = this->speed * sin(theta);
 
 	// set new vel comps
 	this->velocity.x = newXV * xBounceMod;
 	this->velocity.y = -1.0f * newYV;
 }
 
-void Ball::update(int dt_ms, int windowWidth, int windowHeight) {
+bool Ball::update(int dt_ms, int windowWidth, int windowHeight) {
+	//cOlOrS
+	this->colorCycleCount++;
+	if (this->colorCycleCount > 4) {
+		this->colorCycleCount = 0;
+		this->shape.setFillColor(Color(rand(), rand(), rand()));
+	}
+
 	// update position based on velocity
 	this->position.x += this->velocity.x * dt_ms;
 	this->position.y += this->velocity.y * dt_ms;
+
+	bool wallBounce = false;
 
 	if (this->position.y + this->radius > windowHeight) {
 		// pass as we are below board
@@ -78,20 +87,34 @@ void Ball::update(int dt_ms, int windowWidth, int windowHeight) {
 	else if (this->position.y - this->radius < 0) {
 		this->position.y = this->radius;
 		this->velocity.y *= -1;
+		wallBounce = true;
 	}
 
 	if (this->position.x + this->radius > windowWidth) {
 		this->position.x = windowWidth - this->radius;
 		this->velocity.x *= -1;
+		wallBounce = true;
 	}
 	else if (this->position.x - this->radius < 0) {
 		this->position.x = this->radius;
 		this->velocity.x *= -1;
+		wallBounce = true;
 	}
+
+	return wallBounce;
+}
+
+void Ball::paddleRelease(int windowWidth, int windowHeight, Vector2f paddlePos) {
+	Vector2f midpoint = Vector2f(windowWidth / 2.0f, windowHeight / 2.0f);
+	Vector2f displacement = Vector2f(midpoint.x - paddlePos.x, midpoint.y - paddlePos.y);
+	float magnitude = sqrt(displacement.x * displacement.x + displacement.y * displacement.y);
+	Vector2f unit_displacement = Vector2f(displacement.x / magnitude, displacement.y / magnitude);
+
+	this->setVelocity(Vector2f(unit_displacement.x * this->speed, unit_displacement.y * this->speed));
 }
 
 void Ball::draw(RenderWindow* window) {
-	this->shape.setPosition(this->position);
+	this->shape.setPosition(Vector2f(this->position.x - this->radius, this->position.y - this->radius));
 	window->draw(this->shape);
 }
 

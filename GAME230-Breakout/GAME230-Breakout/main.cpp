@@ -17,6 +17,8 @@ const int WINDOW_WIDTH = 1000;
 const int WINDOW_HEIGHT = 750;
 
 enum { FREE, OFFSCREEN, ONPADDLE };
+enum { MOUSE, KEYBOARD, AI };
+enum { MENU, GAMEPLAY, DEAD, NEXTLEVEL};
 
 /*
 Calculates pythagorean distance between two points given as Vector2f
@@ -75,31 +77,10 @@ int main() {
 	bool rightKeyPressed = false;
 
 	// tracker vars
+	int gameState = GAMEPLAY;
 	int lives = 3;
-	bool ballReleased = false; // used for on-paddle state to know if ball has been sent
-
-	// construct gameplay objects
-	Ball ball = Ball();
-	ball.setPosition(Vector2f(WINDOW_WIDTH / 2.0f, WINDOW_HEIGHT / 2.0f));
-	ball.setVelocity(Vector2f(0.0f, 0.5f));
-
-	Paddle paddle = Paddle();
-	paddle.setPosition(Vector2f(WINDOW_WIDTH / 2.0f, WINDOW_HEIGHT - 15.0f));
-	paddle.setMouseControl(true);
-
-	vector<Brick> bricks;
-	int cols = 0;
-	int rows = 0;
-	for (int i = 0; i < 5; i++) {
-		for (int j = 0; j < 10; j++) {
-			Brick brick = Brick();
-			brick.setPosition(Vector2f(cols, rows));
-			bricks.push_back(brick);
-			cols += 100;
-		}
-		rows += 30;
-		cols = 0;
-	}
+	int score = 0;
+	bool ballReleased = false; // used to know if ball has been released from paddle
 
 	// load fonts
 	sf::Font font;
@@ -113,11 +94,11 @@ int main() {
 
 	// load sounds
 	sf::SoundBuffer buffer_impact;
-	if (!buffer_impact.loadFromFile("impact.wav")) {
+	if (!buffer_impact.loadFromFile("knock.wav")) {
 		return -1;
 	}
-	sf::Sound sfx_impact;
-	sfx_impact.setBuffer(buffer_impact);
+	sf::Sound sfx_paddleImpact;
+	sfx_paddleImpact.setBuffer(buffer_impact);
 
 	sf::SoundBuffer buffer_brick;
 	if (!buffer_brick.loadFromFile("brick collide.flac")) {
@@ -126,12 +107,91 @@ int main() {
 	sf::Sound sfx_brickCollide;
 	sfx_brickCollide.setBuffer(buffer_brick);
 
+	sf::SoundBuffer buffer_wall;
+	if (!buffer_wall.loadFromFile("knock.wav")) {
+		return -1;
+	}
+	sf::Sound sfx_wallCollide;
+	sfx_wallCollide.setBuffer(buffer_wall);
+
+	sf::SoundBuffer buffer_life;
+	if (!buffer_life.loadFromFile("lifelost2.wav")) {
+		return -1;
+	}
+	sf::Sound sfx_lifeLost;
+	sfx_lifeLost.setBuffer(buffer_life);
+
+	sf::SoundBuffer buffer_win;
+	if (!buffer_win.loadFromFile("sweet sweet victory yeah.wav")) {
+		return -1;
+	}
+	sf::Sound sfx_win;
+	sfx_win.setBuffer(buffer_win);
+
+	// load textures
+	Texture brickTexture;
+	if (!brickTexture.loadFromFile("brick.png", IntRect(0, 0, 100, 30))) {
+		return -1;
+	}
+	Texture backgroundTexture;
+	if (!backgroundTexture.loadFromFile("spacebg2.png")) {
+		return -1;
+	}
+	Texture paddleTexture;
+	if (!paddleTexture.loadFromFile("flagpiece.png")) {
+		return -1;
+	}
+
+	// construct gameplay objects
+	Ball ball = Ball();
+	ball.setPosition(Vector2f(WINDOW_WIDTH / 2.0f, WINDOW_HEIGHT / 2.0f));
+	ball.setVelocity(Vector2f(0.0f, 0.5f));
+
+	Paddle paddle = Paddle(&paddleTexture);
+	paddle.setPosition(Vector2f(WINDOW_WIDTH / 2.0f, WINDOW_HEIGHT - 30.0f));
+	paddle.setControls(MOUSE);
+
+	vector<Brick> bricks; // there are 30 bricks
+	int cols = 0;
+	int rows = 60;
+	for (int i = 0; i < 3; i++) {
+		for (int j = 0; j < 10; j++) {
+			Brick brick = Brick(&brickTexture);
+			brick.setPosition(Vector2f(cols, rows));
+			bricks.push_back(brick);
+			cols += 100;
+		}
+		rows += 30;
+		cols = 0;
+	}
+
 	// lives text
+	Text livesNumber;
 	Text livesText;
-	livesText.setPosition(WINDOW_WIDTH - 50.0f, WINDOW_HEIGHT / 2.0f);
+	Text scoreNumber;
+	Text scoreText;
+	livesNumber.setFont(font);
+	livesNumber.setFillColor(Color::White);
 	livesText.setFont(font);
 	livesText.setFillColor(Color::White);
-	livesText.setString(to_string(lives));
+	scoreNumber.setFont(font);
+	scoreNumber.setFillColor(Color::White);
+	scoreText.setFont(font);
+	scoreText.setFillColor(Color::White);
+	livesNumber.setPosition(100.0f, WINDOW_HEIGHT - 80.0f);
+	livesText.setPosition(10.0f, WINDOW_HEIGHT - 80.0f);
+	livesNumber.setString(to_string(lives));
+	livesText.setString("Lives:");
+	scoreNumber.setPosition(100.0f, WINDOW_HEIGHT - 40.0f);
+	scoreText.setPosition(10.0f, WINDOW_HEIGHT - 40.0f);
+	scoreNumber.setString(to_string(score));
+	scoreText.setString("Score:");
+
+	//background
+	RectangleShape bg;
+	bg.setSize(Vector2f(WINDOW_WIDTH, WINDOW_HEIGHT));
+	bg.setTexture(&backgroundTexture);
+	bg.setPosition(0.0f, 0.0f);
 
 	// debug text
 	Text debugText;
@@ -176,14 +236,19 @@ int main() {
 		}
 
 		// update dynamic game objects
-		ball.update(dt_ms, WINDOW_WIDTH, WINDOW_HEIGHT);
-		paddle.updateDelegator(dt_ms, WINDOW_WIDTH, leftKeyPressed, rightKeyPressed, Mouse::getPosition(window));
+		paddle.updateDelegator(dt_ms, WINDOW_WIDTH, leftKeyPressed, rightKeyPressed, Mouse::getPosition(window), ball.getPosition());
+		if (ball.update(dt_ms, WINDOW_WIDTH, WINDOW_HEIGHT)) {
+			sfx_wallCollide.play();
+		}
 
 		if (ball.getState() == OFFSCREEN) { // if ball is below screen
 			// lose a life
 			lives--;
-			livesText.setString(to_string(lives));
-			// TODO: Logic here to end the game 
+			livesNumber.setString(to_string(lives));
+			sfx_lifeLost.play();
+			if (lives <= 0) {
+				gameState = DEAD;
+			}
 
 			// remove velocity and set to paddle state
 			ball.setVelocity(Vector2f(0.0f, 0.0f));
@@ -197,7 +262,8 @@ int main() {
 			if (ballReleased) {
 				ballReleased = false;
 				ball.setState(FREE);
-				ball.setVelocity(Vector2f(0.0f, 0.5f));
+				ball.paddleRelease(WINDOW_WIDTH, WINDOW_HEIGHT, 
+					Vector2f(paddle.getPosition().x + paddle.getSize().x / 2.0f, paddle.getPosition().y));
 			}
 			debugText.setString("ONPADDLE");
 		}
@@ -207,19 +273,28 @@ int main() {
 				// do paddle bounce things
 				ball.bouncePaddle(&paddle);
 				ball.setPosition(Vector2f(ball.getPosition().x, paddle.getPosition().y - ball.getRadius()));
-				sfx_impact.play();
+				sfx_paddleImpact.play();
 			}
 
 			// check ball-brick collision
+			bool brickActive = false;
 			for (auto& brick : bricks) {
-				if (circleRectCollision(ball.getPosition(), ball.getRadius(), brick.getPosition(), brick.getSize())) {
-					if (brick.isActive()) {
+				if (brick.isActive()) {
+					brickActive = true;
+					if (circleRectCollision(ball.getPosition(), ball.getRadius(), brick.getPosition(), brick.getSize())) {
 						// TODO: put better logic here for if hit side of brick
 						ball.bounceBrick(&brick);
-						//ball.setPosition(Vector2f(ball.getPosition().x, brick.getPosition().y + brick.getSize().y + ball.getRadius()));
+						score += rand() % 900 + 100;
+						scoreNumber.setString(to_string(score));
 						sfx_brickCollide.play();
 					}
 				}
+			}
+
+			if (!brickActive) {
+				ball.setState(ONPADDLE);
+				gameState = NEXTLEVEL;
+				sfx_win.play();
 			}
 
 			debugText.setString("FREE");
@@ -227,6 +302,7 @@ int main() {
 		}
 
 		window.clear(Color(0, 0, 0));
+		window.draw(bg);
 
 		// draw objects
 		ball.draw(&window);
@@ -235,8 +311,11 @@ int main() {
 			brick.draw(&window);
 		}
 
-		window.draw(debugText);
+		//window.draw(debugText);
+		window.draw(livesNumber);
 		window.draw(livesText);
+		window.draw(scoreNumber);
+		window.draw(scoreText);
 		window.display();
 	}
 

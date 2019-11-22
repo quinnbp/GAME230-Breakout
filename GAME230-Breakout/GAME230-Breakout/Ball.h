@@ -16,15 +16,16 @@ using namespace sf;
 class Ball {
 public:
 	Ball();
-	void setPosition(Vector2f newpos);
+	void setPosition(Vector2f newpos); // position of the CENTER of the circle
 	Vector2f getPosition();
 	void setVelocity(Vector2f newvel);
 	Vector2f getVelocity();
 	float getRadius();
 	void draw(RenderWindow* window);
-	void update(int dt_ms, int windowWidth, int windowHeight);
+	bool update(int dt_ms, int windowWidth, int windowHeight);
 	void bouncePaddle(Paddle* paddle);
 	void bounceBrick(Brick* brick);
+	void paddleRelease(int windowWidth, int windowHeight, Vector2f paddlePos);
 	int getState();
 	void setState(int state);
 private:
@@ -33,4 +34,6 @@ private:
 	CircleShape shape;
 	float radius;
 	int state;
+	int colorCycleCount;
+	float speed;
 };
