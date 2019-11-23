@@ -93,26 +93,42 @@ int main() {
 	}
 
 	// load sounds
+	sf::SoundBuffer buffer_launch;
+	if (!buffer_launch.loadFromFile("launch1.wav")) {
+		return -1;
+	}
+	sf::Sound sfx_launch;
+	sfx_launch.setBuffer(buffer_launch);
+
+	sf::SoundBuffer buffer_start;
+	if (!buffer_start.loadFromFile("gameStart1.wav")) {
+		return -1;
+	}
+	sf::Sound sfx_start;
+	sfx_start.setBuffer(buffer_start);
+
 	sf::SoundBuffer buffer_impact;
-	if (!buffer_impact.loadFromFile("knock.wav")) {
+	if (!buffer_impact.loadFromFile("impact1.wav")) {
 		return -1;
 	}
 	sf::Sound sfx_paddleImpact;
 	sfx_paddleImpact.setBuffer(buffer_impact);
 
 	sf::SoundBuffer buffer_brick;
-	if (!buffer_brick.loadFromFile("brick collide.flac")) {
+	if (!buffer_brick.loadFromFile("impact1.wav")) {
 		return -1;
 	}
 	sf::Sound sfx_brickCollide;
 	sfx_brickCollide.setBuffer(buffer_brick);
+	sfx_brickCollide.setPitch(0.5);
 
 	sf::SoundBuffer buffer_wall;
-	if (!buffer_wall.loadFromFile("knock.wav")) {
+	if (!buffer_wall.loadFromFile("impact1.wav")) {
 		return -1;
 	}
 	sf::Sound sfx_wallCollide;
 	sfx_wallCollide.setBuffer(buffer_wall);
+	sfx_wallCollide.setPitch(0.75);
 
 	sf::SoundBuffer buffer_life;
 	if (!buffer_life.loadFromFile("lifelost2.wav")) {
@@ -127,6 +143,14 @@ int main() {
 	}
 	sf::Sound sfx_win;
 	sfx_win.setBuffer(buffer_win);
+
+	/*Music music;
+	if (!music.openFromFile("pongdraft02.wav")) {
+		exit(-1);
+	}
+	music.setLoop(true);
+	music.setVolume(50);
+	music.play();*/
 
 	// load textures
 	Texture brickTexture;
@@ -200,6 +224,8 @@ int main() {
 	debugText.setFillColor(Color::White);
 	debugText.setString("");
 
+	sfx_start.play();
+
 	while (window.isOpen()) {
 
 		// frame timing
@@ -264,8 +290,10 @@ int main() {
 				ball.setState(FREE);
 				ball.paddleRelease(WINDOW_WIDTH, WINDOW_HEIGHT, 
 					Vector2f(paddle.getPosition().x + paddle.getSize().x / 2.0f, paddle.getPosition().y));
+				sfx_launch.play();
 			}
 			debugText.setString("ONPADDLE");
+			
 		}
 		else if (ball.getState() == FREE) { // we are in active state so check collisions
 			// check ball-paddle collision
