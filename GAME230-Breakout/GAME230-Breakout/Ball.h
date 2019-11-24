@@ -24,7 +24,7 @@ public:
 	void draw(RenderWindow* window);
 	bool update(int dt_ms, int windowWidth, int windowHeight);
 	void bouncePaddle(Paddle* paddle);
-	void bounceBrick();
+	void bounceBrick(Brick* brick);
 	void paddleRelease(int windowWidth, int windowHeight, Vector2f paddlePos);
 	int getState();
 	void setState(int state);

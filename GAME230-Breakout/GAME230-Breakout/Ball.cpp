@@ -34,9 +34,26 @@ int Ball::getState() {
 	return this->state;
 }
 
-void Ball::bounceBrick() {
-	if (this->velocity.y < 0) {
+void Ball::bounceBrick(Brick* brick) {
+	// get min max X/Y coords for brick
+	float brickTopY = brick->getPosition().y;
+	float brickBottomY = brick->getPosition().y + brick->getSize().y;
+	float brickLeftX = brick->getPosition().x;
+	float brickRightX = brick->getPosition().x + brick->getSize().x;
+
+	if (this->position.x < brickLeftX || this->position.x > brickRightX) {
+		// we are coming from left or right
+		this->velocity.x *= -1.0f;
+	}
+	else if (this->position.y < brickTopY || this->position.y > brickBottomY) {
+		// we are coming from top or bottom
 		this->velocity.y *= -1.0f;
+	}
+	else {
+		// catch weird edge cases by forcing ball DOWN
+		if (this->velocity.y < 0) {
+			this->velocity.y *= -1.0f;
+		}
 	}
 }
 

@@ -211,7 +211,7 @@ int main() {
 	ball.setVelocity(Vector2f(0.0f, 0.5f));
 
 	Paddle paddle = Paddle(&paddleTexture);
-	paddle.setPosition(Vector2f(WINDOW_WIDTH / 2.0f, WINDOW_HEIGHT - 30.0f));
+	paddle.setPosition(Vector2f(WINDOW_WIDTH / 2.0f, WINDOW_HEIGHT - 50.0f));
 	paddle.setControls(MOUSE);
 
 	vector<Brick> bricks = brickLevelSetup(1, &brickTexture);
@@ -262,8 +262,8 @@ int main() {
 	titleTextShadow.setPosition(WINDOW_WIDTH / 2.0f - 303.0f, WINDOW_HEIGHT / 2.0f - 205.0f);
 	deathText.setPosition(WINDOW_WIDTH / 2.0f - 100.0f, WINDOW_HEIGHT / 2.0f);
 	deathTextShadow.setPosition(WINDOW_WIDTH / 2.0f - 103.0f, WINDOW_HEIGHT / 2.0f - 3.0f);
-	livesNumber.setPosition(100.0f, WINDOW_HEIGHT - 80.0f);
-	livesText.setPosition(10.0f, WINDOW_HEIGHT - 80.0f);
+	livesNumber.setPosition(WINDOW_WIDTH - 30.0f, WINDOW_HEIGHT - 40.0f);
+	livesText.setPosition(WINDOW_WIDTH - 120.0f, WINDOW_HEIGHT - 40.0f);
 	scoreNumber.setPosition(100.0f, WINDOW_HEIGHT - 40.0f);
 	scoreText.setPosition(10.0f, WINDOW_HEIGHT - 40.0f);
 
@@ -474,8 +474,7 @@ int main() {
 					if (brick.isActive()) {
 						brickActive = true;
 						if (circleRectCollision(ball.getPosition(), ball.getRadius(), brick.getPosition(), brick.getSize())) {
-							// TODO: put better logic here for if hit side of brick
-							ball.bounceBrick();
+							ball.bounceBrick(&brick);
 							brick.resolveHit();
 							score += rand() % 900 + 100;
 							scoreNumber.setString(to_string(score));
