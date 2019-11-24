@@ -12,6 +12,10 @@ Paddle::Paddle(Texture* texture) {
 	this->controls = KEYBOARD;
 }
 
+int Paddle::getControls() {
+	return this->controls;
+}
+
 void Paddle::checkBounds(int windowWidth) {
 	if (this->position.x < 0) { // if off the left side of screen
 		this->position.x = 0;

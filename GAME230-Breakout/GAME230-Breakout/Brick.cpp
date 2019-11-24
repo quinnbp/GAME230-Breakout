@@ -5,6 +5,7 @@ Brick::Brick(const Texture* texture) {
 	this->size = Vector2f(100.0f, 30.0f);
 
 	this->active = true;
+	this->hitsToBreak = 1; // default single hit brick
 
 	this->shape = RectangleShape(this->size);
 	this->shape.setPosition(this->position);
@@ -12,6 +13,21 @@ Brick::Brick(const Texture* texture) {
 	this->shape.setOutlineColor(Color::Black);
 	this->shape.setOutlineThickness(-2);
 	this->shape.setTexture(texture);
+}
+
+void Brick::resolveHit() {
+	this->hitsToBreak--;
+	if (this->hitsToBreak <= 0) {
+		this->active = false;
+	}
+}
+
+int Brick::getHits() {
+	return this->hitsToBreak;
+}
+
+void Brick::setHits(int hits) {
+	this->hitsToBreak = hits;
 }
 
 void Brick::update() {

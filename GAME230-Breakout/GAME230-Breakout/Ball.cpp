@@ -18,6 +18,14 @@ Ball::Ball() {
 	this->speed = 0.4;
 }
 
+void Ball::setSpeed(float newspeed) {
+	this->speed = newspeed;
+}
+
+float Ball::getSpeed() {
+	return this->speed;
+}
+
 void Ball::setState(int state) {
 	this->state = state;
 }

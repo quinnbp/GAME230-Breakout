@@ -28,6 +28,8 @@ public:
 	void paddleRelease(int windowWidth, int windowHeight, Vector2f paddlePos);
 	int getState();
 	void setState(int state);
+	float getSpeed();
+	void setSpeed(float newspeed);
 private:
 	Vector2f position;
 	Vector2f velocity;

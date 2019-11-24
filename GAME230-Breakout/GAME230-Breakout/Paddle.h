@@ -25,6 +25,7 @@ public:
 	void setVelocity(float newvel);
 	float getVelocity();
 	void setControls(int state);
+	int getControls();
 	Vector2f getSize();
 private:
 	void checkBounds(int windowWidth);

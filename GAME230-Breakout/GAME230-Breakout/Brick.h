@@ -20,10 +20,13 @@ public:
 	Vector2f getSize();
 	bool isActive();
 	void setActive(bool state);
-	bool active;
+	void resolveHit();
+	int getHits();
+	void setHits(int hits);
 private:
 	Vector2f position;
 	RectangleShape shape;
 	Vector2f size;
-	
+	int hitsToBreak;
+	bool active;
 };
