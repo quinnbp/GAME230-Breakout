@@ -110,6 +110,13 @@ int main() {
 	}
 
 	// load sounds
+	sf::SoundBuffer buffer_damage;
+	if (!buffer_damage.loadFromFile("damage.wav")) {
+		return -1;
+	}
+	sf::Sound sfx_damage;
+	sfx_damage.setBuffer(buffer_damage);
+
 	sf::SoundBuffer buffer_launch;
 	if (!buffer_launch.loadFromFile("launch1.wav")) {
 		return -1;
@@ -476,9 +483,14 @@ int main() {
 						if (circleRectCollision(ball.getPosition(), ball.getRadius(), brick.getPosition(), brick.getSize())) {
 							ball.bounceBrick(&brick);
 							brick.resolveHit();
+							if (brick.getHits() == 0) {
+								sfx_brickCollide.play();
+							}
+							else {
+								sfx_damage.play();
+							}
 							score += rand() % 900 + 100;
 							scoreNumber.setString(to_string(score));
-							sfx_brickCollide.play();
 						}
 					}
 				}
