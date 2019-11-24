@@ -20,7 +20,7 @@ enum { FREE, OFFSCREEN, ONPADDLE };
 enum { MOUSE, KEYBOARD, AI };
 enum { MENU, GAMEPLAY, DEAD, NEXTLEVEL};
 
-vector<Brick>* brickLevelSetup(int level, Texture* brickTexture) {
+vector<Brick> brickLevelSetup(int level, Texture* brickTexture) {
 	vector<Brick> bricks; // there are 30 bricks
 	int cols = 0;
 	int rows = 60;
@@ -28,23 +28,31 @@ vector<Brick>* brickLevelSetup(int level, Texture* brickTexture) {
 		for (int j = 0; j < 10; j++) {
 			Brick brick = Brick(brickTexture);
 			brick.setPosition(Vector2f(cols, rows));
-			bricks.push_back(brick);
 			cols += 100;
-			if (level > 1) {
-				if (i == 1) { // create layer 2 hard bricks
+
+			// level 1: 1, 1, 1
+			// level 2: 2, 1, 1
+			// level 3: 3, 2, 1
+			if (level == 2) { 
+				if (i == 0) {
 					brick.setHits(2);
 				}
 			}
-			if (level > 2) {
-				if (i == 0) { // create layer 3 harder bricks
-					brick.setHits(2); 
+			else if (level == 3) { 
+				if (i == 0) {
+					brick.setHits(3);
+				}
+				else if (i == 1) {
+					brick.setHits(2);
 				}
 			}
+
+			bricks.push_back(brick);
 		}
 		rows += 30;
 		cols = 0;
 	}
-	return &bricks;
+	return bricks;
 }
 
 /*
@@ -206,19 +214,7 @@ int main() {
 	paddle.setPosition(Vector2f(WINDOW_WIDTH / 2.0f, WINDOW_HEIGHT - 30.0f));
 	paddle.setControls(MOUSE);
 
-	vector<Brick> bricks; // there are 30 bricks
-	int cols = 0;
-	int rows = 60;
-	for (int i = 0; i < 3; i++) {
-		for (int j = 0; j < 10; j++) {
-			Brick brick = Brick(&brickTexture);
-			brick.setPosition(Vector2f(cols, rows));
-			bricks.push_back(brick);
-			cols += 100;
-		}
-		rows += 30;
-		cols = 0;
-	}
+	vector<Brick> bricks = brickLevelSetup(1, &brickTexture);
 
 	// initialize text objects
 	Text livesNumber;
@@ -401,21 +397,22 @@ int main() {
 				level = 1;
 				scoreNumber.setString(to_string(score));
 				livesNumber.setString(to_string(lives));
-				// reset bricks
-				for (auto &brick : bricks) {
-					brick.setActive(true);
-				}
+				// reset bricks for level 1
+				bricks = brickLevelSetup(1, &brickTexture);
 				// reset ball/paddle
 				ballReleased = false;
 				ball.setState(ONPADDLE);
+				ball.setSpeed(0.4); // base speed reset
 			}
 		}
 		else if (gameState == NEXTLEVEL) {
 			// reset bricks and increase ball speed
-			for (auto &brick : bricks) {
-				brick.setActive(true);
-			}
 			level++;
+			if (level > 3) { // reset after all levels
+				level = 1;
+				ball.setSpeed(ball.getSpeed() * 1.1f); // additional speed increase
+			}
+			bricks = brickLevelSetup(level, &brickTexture);
 			ball.setSpeed(ball.getSpeed() * 1.1f);
 			gameState = GAMEPLAY;
 
@@ -478,7 +475,8 @@ int main() {
 						brickActive = true;
 						if (circleRectCollision(ball.getPosition(), ball.getRadius(), brick.getPosition(), brick.getSize())) {
 							// TODO: put better logic here for if hit side of brick
-							ball.bounceBrick(&brick);
+							ball.bounceBrick();
+							brick.resolveHit();
 							score += rand() % 900 + 100;
 							scoreNumber.setString(to_string(score));
 							sfx_brickCollide.play();

@@ -20,6 +20,15 @@ void Brick::resolveHit() {
 	if (this->hitsToBreak <= 0) {
 		this->active = false;
 	}
+	else if (this->hitsToBreak == 1) {
+		this->shape.setFillColor(Color::White);
+	}
+	else if (this->hitsToBreak == 2) {
+		this->shape.setFillColor(Color::Red);
+	}
+	else if (this->hitsToBreak == 3) {
+		this->shape.setFillColor(Color::Blue);
+	}
 }
 
 int Brick::getHits() {
@@ -27,7 +36,8 @@ int Brick::getHits() {
 }
 
 void Brick::setHits(int hits) {
-	this->hitsToBreak = hits;
+	this->hitsToBreak = hits + 1; // hacky
+	this->resolveHit();
 }
 
 void Brick::update() {

@@ -34,8 +34,7 @@ int Ball::getState() {
 	return this->state;
 }
 
-void Ball::bounceBrick(Brick* brick) {
-	brick->setActive(false);
+void Ball::bounceBrick() {
 	if (this->velocity.y < 0) {
 		this->velocity.y *= -1.0f;
 	}
