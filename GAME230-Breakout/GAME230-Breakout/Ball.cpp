@@ -63,6 +63,7 @@ int Ball::getState() {
 }
 
 void Ball::bounceBrick(Brick* brick) {
+	// TODO: do something smarter here
 	if (this->power != PENETRATING) { // if ball is penetrating, take no bounce action
 		// get min max X/Y coords for brick
 		float brickTopY = brick->getPosition().y;
@@ -109,7 +110,7 @@ void Ball::bouncePaddle(Paddle* paddle) {
 
 	// what angle to bounce (as in breakout)
 	float thetaDegrees = 90.0f - 60.0f * angleRatio; // max 90, min 30
-	float theta = thetaDegrees * PI / 180.0f; // conv to radians
+	float theta = (float) thetaDegrees * PI / 180.0f; // conv to radians
 	float newXV = this->speed * cos(theta); // calc new components, always positive
 	float newYV = this->speed * sin(theta);
 

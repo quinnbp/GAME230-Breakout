@@ -101,6 +101,13 @@ bool circleRectCollision(Vector2f bp, float br, Vector2f pp, Vector2f ps) {
 	}
 }
 
+void resetPowerups(Ball* ball, Paddle* paddle) {
+	// remove any powerups
+	ball->setPower(NORMAL); // normal ball behavior
+	paddle->setPosition(Vector2f(WINDOW_WIDTH / 2.0f, WINDOW_HEIGHT - 50.0f));
+	paddle->setSize(Vector2f(70.0f, 10.0f)); // standard size from constructor
+}
+
 int main() {
 	// load fonts
 	sf::Font normalFont;
@@ -170,6 +177,7 @@ int main() {
 	}
 	sf::Sound sfx_win;
 	sfx_win.setBuffer(buffer_win);
+	sfx_win.setVolume(80);
 
 	// load textures
 	Texture brickTexture;
@@ -409,9 +417,7 @@ int main() {
 				ball.setState(ONPADDLE);
 				ball.setSpeed(0.5);
 				// remove any powerups
-				ball.setPower(NORMAL); // normal ball behavior
-				paddle.setPosition(Vector2f(WINDOW_WIDTH / 2.0f, WINDOW_HEIGHT - 50.0f));
-				paddle.setSize(Vector2f(70.0f, 10.0f)); // standard size from constructor
+				resetPowerups(&ball, &paddle);
 			}
 		}
 		else if (gameState == NEXTLEVEL) {
@@ -427,9 +433,7 @@ int main() {
 			bricks = brickLevelSetup(level, &brickTexture);
 			
 			// remove any powerups
-			ball.setPower(NORMAL); // normal ball behavior
-			paddle.setPosition(Vector2f(WINDOW_WIDTH / 2.0f, WINDOW_HEIGHT - 50.0f));
-			paddle.setSize(Vector2f(70.0f, 10.0f)); // standard size from constructor
+			resetPowerups(&ball, &paddle);
 
 			// update game state
 			gameState = GAMEPLAY;
@@ -459,6 +463,9 @@ int main() {
 				// remove velocity and set to paddle state
 				ball.setVelocity(Vector2f(0.0f, 0.0f));
 				ball.setState(ONPADDLE);
+
+				// remove powerups
+				resetPowerups(&ball, &paddle);
 			}
 			else if (ball.getState() == ONPADDLE) { // if ball on paddle
 				// set ball to paddle midpoint
