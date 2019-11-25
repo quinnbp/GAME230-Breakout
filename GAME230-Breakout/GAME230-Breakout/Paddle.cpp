@@ -12,6 +12,10 @@ Paddle::Paddle(Texture* texture) {
 	this->controls = KEYBOARD;
 }
 
+void Paddle::setSize(Vector2f newsize) {
+	this->size = newsize;
+}
+
 int Paddle::getControls() {
 	return this->controls;
 }
@@ -27,6 +31,7 @@ void Paddle::checkBounds(int windowWidth) {
 
 void Paddle::updateDelegator(int dt_ms, int windowWidth, bool left, bool right, Vector2i mousePos, Vector2f ballPosition) {
 	// delegate how control works based on chosen control scheme
+	this->shape.setSize(this->size);
 	if (this->controls == MOUSE) {
 		this->updateMouse(windowWidth, mousePos);
 	}

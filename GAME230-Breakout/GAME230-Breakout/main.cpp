@@ -9,6 +9,7 @@
 #include "Ball.h"
 #include "Paddle.h"
 #include "Brick.h"
+#include "Powerup.h"
 
 using namespace std;
 using namespace sf;
@@ -19,6 +20,8 @@ const int WINDOW_HEIGHT = 750;
 enum { FREE, OFFSCREEN, ONPADDLE };
 enum { MOUSE, KEYBOARD, AI };
 enum { MENU, GAMEPLAY, DEAD, NEXTLEVEL};
+enum { PADDLE, BALL };
+enum { NORMAL, PENETRATING };
 
 vector<Brick> brickLevelSetup(int level, Texture* brickTexture) {
 	vector<Brick> bricks; // there are 30 bricks
@@ -168,14 +171,6 @@ int main() {
 	sf::Sound sfx_win;
 	sfx_win.setBuffer(buffer_win);
 
-	/*Music music;
-	if (!music.openFromFile("pongdraft02.wav")) {
-		exit(-1);
-	}
-	music.setLoop(true);
-	music.setVolume(50);
-	music.play();*/
-
 	// load textures
 	Texture brickTexture;
 	if (!brickTexture.loadFromFile("brick.png", IntRect(0, 0, 100, 30))) {
@@ -220,6 +215,9 @@ int main() {
 	Paddle paddle = Paddle(&paddleTexture);
 	paddle.setPosition(Vector2f(WINDOW_WIDTH / 2.0f, WINDOW_HEIGHT - 50.0f));
 	paddle.setControls(MOUSE);
+
+	Powerup pu1 = Powerup(PADDLE);
+	Powerup pu2 = Powerup(BALL);
 
 	vector<Brick> bricks = brickLevelSetup(1, &brickTexture);
 
@@ -406,23 +404,35 @@ int main() {
 				livesNumber.setString(to_string(lives));
 				// reset bricks for level 1
 				bricks = brickLevelSetup(1, &brickTexture);
-				// reset ball/paddle
+				// reset ball vars and speed
 				ballReleased = false;
 				ball.setState(ONPADDLE);
-				ball.setSpeed(0.4); // base speed reset
+				ball.setSpeed(0.5);
+				// remove any powerups
+				ball.setPower(NORMAL); // normal ball behavior
+				paddle.setPosition(Vector2f(WINDOW_WIDTH / 2.0f, WINDOW_HEIGHT - 50.0f));
+				paddle.setSize(Vector2f(70.0f, 10.0f)); // standard size from constructor
 			}
 		}
 		else if (gameState == NEXTLEVEL) {
-			// reset bricks and increase ball speed
+			// increase speed
+			ball.setSpeed(ball.getSpeed() * 1.1f);
+			// reset bricks
 			level++;
 			if (level > 3) { // reset after all levels
 				level = 1;
 				ball.setSpeed(ball.getSpeed() * 1.1f); // additional speed increase
 			}
+			// set up next level
 			bricks = brickLevelSetup(level, &brickTexture);
-			ball.setSpeed(ball.getSpeed() * 1.1f);
-			gameState = GAMEPLAY;
+			
+			// remove any powerups
+			ball.setPower(NORMAL); // normal ball behavior
+			paddle.setPosition(Vector2f(WINDOW_WIDTH / 2.0f, WINDOW_HEIGHT - 50.0f));
+			paddle.setSize(Vector2f(70.0f, 10.0f)); // standard size from constructor
 
+			// update game state
+			gameState = GAMEPLAY;
 		} 
 		else if (gameState == GAMEPLAY) {
 
@@ -431,6 +441,8 @@ int main() {
 			if (ball.update(dt_ms, WINDOW_WIDTH, WINDOW_HEIGHT)) {
 				sfx_wallCollide.play();
 			}
+			pu1.update(dt_ms, WINDOW_HEIGHT);
+			pu2.update(dt_ms, WINDOW_HEIGHT);
 
 			if (ball.getState() == OFFSCREEN) { // if ball is below screen
 				// lose a life
@@ -447,8 +459,6 @@ int main() {
 				// remove velocity and set to paddle state
 				ball.setVelocity(Vector2f(0.0f, 0.0f));
 				ball.setState(ONPADDLE);
-
-				debugText.setString("OFFSCREEN");
 			}
 			else if (ball.getState() == ONPADDLE) { // if ball on paddle
 				// set ball to paddle midpoint
@@ -463,8 +473,6 @@ int main() {
 						Vector2f(paddle.getPosition().x + paddle.getSize().x / 2.0f, paddle.getPosition().y));
 					sfx_launch.play();
 				}
-				debugText.setString("ONPADDLE");
-
 			}
 			else if (ball.getState() == FREE) { // we are in active state so check collisions
 				// check ball-paddle collision
@@ -485,23 +493,62 @@ int main() {
 							brick.resolveHit();
 							if (brick.getHits() == 0) {
 								sfx_brickCollide.play();
+								// spawn pu1/pu1
+								int roll = rand() % 100; // get rand percentage
+								if (roll < 6) {
+									if (!pu1.isActive() && !pu2.isActive()) { // both inactive
+										int flip = rand() % 2; // flip to see which
+										if (flip == 0) {
+											// spawn pu1 in midpoint of destroyed brick
+											pu1.spawn(Vector2f(brick.getPosition().x + brick.getSize().x / 2.0f,
+												brick.getPosition().y + brick.getSize().y / 2.0f));
+										}
+										else {
+											pu2.spawn(Vector2f(brick.getPosition().x + brick.getSize().x / 2.0f,
+												brick.getPosition().y + brick.getSize().y / 2.0f));
+										}
+									}
+									else if (!pu1.isActive()) { // just pu1 inactive
+										pu1.spawn(Vector2f(brick.getPosition().x + brick.getSize().x / 2.0f,
+											brick.getPosition().y + brick.getSize().y / 2.0f));
+									}
+									else if (!pu2.isActive()) { // just pu2 inactive
+										pu2.spawn(Vector2f(brick.getPosition().x + brick.getSize().x / 2.0f,
+											brick.getPosition().y + brick.getSize().y / 2.0f));
+									} 
+									// else both already active and do nothing
+								}
 							}
 							else {
 								sfx_damage.play();
 							}
-							score += rand() % 900 + 100;
+							score += rand() % 900 + 100; // randomized score/brick to add variance (100 - 1000)
 							scoreNumber.setString(to_string(score));
 						}
 					}
 				}
 
+				// check that a brick is still active
 				if (!brickActive) {
 					ball.setState(ONPADDLE);
 					gameState = NEXTLEVEL;
 					sfx_win.play();
+
+					pu1.setActive(false);
+					pu1.setActive(false);
 				}
 
-				debugText.setString("FREE");
+				// check powerups
+				if (pu1.isActive()) {
+					if (circleRectCollision(pu1.getPosition(), pu1.getRadius(), paddle.getPosition(), paddle.getSize())) {
+						pu1.paddleCollide(&paddle, &ball);
+					}
+				}
+				if (pu2.isActive()) {
+					if (circleRectCollision(pu2.getPosition(), pu2.getRadius(), paddle.getPosition(), paddle.getSize())) {
+						pu2.paddleCollide(&paddle, &ball);
+					}
+				}
 			}
 
 			// draw objects
@@ -510,6 +557,8 @@ int main() {
 			for (Brick& brick : bricks) {
 				brick.draw(&window);
 			}
+			pu1.draw(&window);
+			pu2.draw(&window);
 
 			//window.draw(debugText);
 

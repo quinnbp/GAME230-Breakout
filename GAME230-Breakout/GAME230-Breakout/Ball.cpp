@@ -6,6 +6,7 @@ using namespace std;
 const double PI = 3.14159265358979323846264388;
 
 enum { FREE, OFFSCREEN, ONPADDLE };
+enum { NORMAL, PENETRATING };
 
 Ball::Ball() {
 	this->position = Vector2f(0.0f, 0.0f);
@@ -20,20 +21,29 @@ Ball::Ball() {
 
 	this->radius = 7.0f;
 
-	this->shape = CircleShape(this->radius, 100);
+	this->shape = CircleShape(this->radius, 60);
 	this->shape.setFillColor(Color::White);
 	this->shape.setOutlineColor(Color::Black);
-	this->shape.setOutlineThickness(3.0f);
+	this->shape.setOutlineThickness(2.0f);
 
-	this->shape2 = CircleShape(this->radius);
+	this->shape2 = CircleShape(this->radius, 60);
 	this->shape2.setFillColor(Color::White);
 	this->shape2.setOutlineColor(Color::Black);
-	this->shape2.setOutlineThickness(2.0f);
+	this->shape2.setOutlineThickness(1.0f);
 	
 	this->colorCycleCount = 0;
 
 	this->state = ONPADDLE;
-	this->speed = 0.4;
+	this->power = NORMAL;
+	this->speed = 0.5;
+}
+
+int Ball::getPower(){
+	return this->power;
+}
+
+void Ball::setPower(int newpower) {
+	this->power = newpower;
 }
 
 void Ball::setSpeed(float newspeed) {
@@ -53,24 +63,26 @@ int Ball::getState() {
 }
 
 void Ball::bounceBrick(Brick* brick) {
-	// get min max X/Y coords for brick
-	float brickTopY = brick->getPosition().y;
-	float brickBottomY = brick->getPosition().y + brick->getSize().y;
-	float brickLeftX = brick->getPosition().x;
-	float brickRightX = brick->getPosition().x + brick->getSize().x;
+	if (this->power != PENETRATING) { // if ball is penetrating, take no bounce action
+		// get min max X/Y coords for brick
+		float brickTopY = brick->getPosition().y;
+		float brickBottomY = brick->getPosition().y + brick->getSize().y;
+		float brickLeftX = brick->getPosition().x;
+		float brickRightX = brick->getPosition().x + brick->getSize().x;
 
-	if (this->position.x < brickLeftX || this->position.x > brickRightX) {
-		// we are coming from left or right
-		this->velocity.x *= -1.0f;
-	}
-	else if (this->position.y < brickTopY || this->position.y > brickBottomY) {
-		// we are coming from top or bottom
-		this->velocity.y *= -1.0f;
-	}
-	else {
-		// catch weird edge cases by forcing ball DOWN
-		if (this->velocity.y < 0) {
+		if (this->position.x < brickLeftX || this->position.x > brickRightX) {
+			// we are coming from left or right
+			this->velocity.x *= -1.0f;
+		}
+		else if (this->position.y < brickTopY || this->position.y > brickBottomY) {
+			// we are coming from top or bottom
 			this->velocity.y *= -1.0f;
+		}
+		else {
+			// catch weird edge cases by forcing ball DOWN
+			if (this->velocity.y < 0) {
+				this->velocity.y *= -1.0f;
+			}
 		}
 	}
 }
@@ -107,12 +119,19 @@ void Ball::bouncePaddle(Paddle* paddle) {
 }
 
 bool Ball::update(int dt_ms, int windowWidth, int windowHeight) {
-	//cOlOrS
-	/*this->colorCycleCount++;
-	if (this->colorCycleCount > 4) {
-		this->colorCycleCount = 0;
-		this->shape.setFillColor(Color(rand(), rand(), rand()));
-	}*/
+	// colors
+	if (this->power == PENETRATING) {
+		if (this->colorCycleCount > 3) {
+			this->shape.setFillColor(Color(rand(), rand(), rand()));
+			this->colorCycleCount = 0;
+		}
+		else {
+			this->colorCycleCount++;
+		}
+	}
+	else {
+		this->shape.setFillColor(Color::White);
+	}
 
 	// push current pos to vector for trail fx
 	this->pastPositions.push_back(this->position);

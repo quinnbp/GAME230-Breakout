@@ -30,6 +30,8 @@ public:
 	void setState(int state);
 	float getSpeed();
 	void setSpeed(float newspeed);
+	int getPower();
+	void setPower(int newpower);
 private:
 	Vector2f position;
 	Vector2f velocity;
@@ -40,4 +42,5 @@ private:
 	int state;
 	int colorCycleCount;
 	float speed;
+	int power;
 };
