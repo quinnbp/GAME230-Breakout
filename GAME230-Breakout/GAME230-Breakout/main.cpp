@@ -239,7 +239,9 @@ int main() {
 	Text titleText;
 	Text titleTextShadow;
 	Text menuText;
+	Text helpText;
 
+	helpText.setFont(normalFont);
 	menuText.setFont(normalFont);
 	titleText.setFont(spaceFont);
 	titleTextShadow.setFont(spaceFont);
@@ -260,6 +262,7 @@ int main() {
 	deathText.setRotation(-5.0f);
 	deathTextShadow.setRotation(-5.0f);
 
+	helpText.setFillColor(Color::White);
 	menuText.setFillColor(Color::White);
 	titleText.setFillColor(Color::White);
 	titleTextShadow.setFillColor(Color::Red);
@@ -270,6 +273,7 @@ int main() {
 	scoreNumber.setFillColor(Color::White);
 	scoreText.setFillColor(Color::White);
 
+	helpText.setPosition(WINDOW_WIDTH / 2.0f - 150.0f, WINDOW_HEIGHT - 40.0f);
 	menuText.setPosition(WINDOW_WIDTH / 2.0f - 150.0f, WINDOW_HEIGHT / 2.0f - 100.0f);
 	titleText.setPosition(WINDOW_WIDTH / 2.0f - 300.0f, WINDOW_HEIGHT / 2.0f - 200.0f);
 	titleTextShadow.setPosition(WINDOW_WIDTH / 2.0f - 303.0f, WINDOW_HEIGHT / 2.0f - 205.0f);
@@ -280,6 +284,7 @@ int main() {
 	scoreNumber.setPosition(100.0f, WINDOW_HEIGHT - 40.0f);
 	scoreText.setPosition(10.0f, WINDOW_HEIGHT - 40.0f);
 
+	helpText.setString("Press space to launch!");
 	menuText.setString("[1] Play with mouse control\n[2] Play with keyboard control\n[3] Demo mode\n[4] Quit");
 	titleText.setString("space breakout");
 	titleTextShadow.setString("space breakout");
@@ -295,17 +300,6 @@ int main() {
 	bg.setSize(Vector2f(WINDOW_WIDTH, WINDOW_HEIGHT));
 	bg.setTexture(&backgroundTexture);
 	bg.setPosition(0.0f, 0.0f);
-
-	// initialize debug objects
-	Text debugText;
-	debugText.setPosition(WINDOW_WIDTH / 2.0f, WINDOW_HEIGHT / 2.0f);
-	debugText.setFont(normalFont);
-	debugText.setFillColor(Color::White);
-	debugText.setString("");
-
-	RectangleShape midline;
-	midline.setSize(Vector2f(2.0f, WINDOW_HEIGHT));
-	midline.setPosition(WINDOW_WIDTH / 2.0f - 1.0f, 0.0f);
 
 	while (window.isOpen()) {
 
@@ -480,6 +474,7 @@ int main() {
 						Vector2f(paddle.getPosition().x + paddle.getSize().x / 2.0f, paddle.getPosition().y));
 					sfx_launch.play();
 				}
+				window.draw(helpText);
 			}
 			else if (ball.getState() == FREE) { // we are in active state so check collisions
 				// check ball-paddle collision

@@ -80,7 +80,7 @@ void Ball::bounceBrick(Brick* brick) {
 			this->velocity.y *= -1.0f;
 		}
 		else {
-			// catch weird edge cases by forcing ball DOWN
+			// catch weird edge cases by forcing ball down
 			if (this->velocity.y < 0) {
 				this->velocity.y *= -1.0f;
 			}
