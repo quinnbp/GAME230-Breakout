@@ -33,7 +33,9 @@ public:
 private:
 	Vector2f position;
 	Vector2f velocity;
+	std::vector<Vector2f> pastPositions;
 	CircleShape shape;
+	CircleShape shape2;
 	float radius;
 	int state;
 	int colorCycleCount;

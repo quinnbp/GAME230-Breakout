@@ -1,6 +1,7 @@
 #include "Ball.h"
 #include "Paddle.h"
 
+using namespace std;
 
 const double PI = 3.14159265358979323846264388;
 
@@ -10,8 +11,25 @@ Ball::Ball() {
 	this->position = Vector2f(0.0f, 0.0f);
 	this->velocity = Vector2f(0.0f, 0.0f);
 
-	this->radius = 5.0f;
-	this->shape = CircleShape(this->radius);
+	// set up vector for trail fx
+	this->pastPositions = {};
+	// push 5 dummy positions to maintain size
+	for (int i = 0; i < 9; i++) {
+		this->pastPositions.push_back(Vector2f(-10, -10));
+	}
+
+	this->radius = 7.0f;
+
+	this->shape = CircleShape(this->radius, 100);
+	this->shape.setFillColor(Color::White);
+	this->shape.setOutlineColor(Color::Black);
+	this->shape.setOutlineThickness(3.0f);
+
+	this->shape2 = CircleShape(this->radius);
+	this->shape2.setFillColor(Color::White);
+	this->shape2.setOutlineColor(Color::Black);
+	this->shape2.setOutlineThickness(2.0f);
+	
 	this->colorCycleCount = 0;
 
 	this->state = ONPADDLE;
@@ -90,11 +108,16 @@ void Ball::bouncePaddle(Paddle* paddle) {
 
 bool Ball::update(int dt_ms, int windowWidth, int windowHeight) {
 	//cOlOrS
-	this->colorCycleCount++;
+	/*this->colorCycleCount++;
 	if (this->colorCycleCount > 4) {
 		this->colorCycleCount = 0;
 		this->shape.setFillColor(Color(rand(), rand(), rand()));
-	}
+	}*/
+
+	// push current pos to vector for trail fx
+	this->pastPositions.push_back(this->position);
+	// remove oldest pos in list to maintain size
+	this->pastPositions.erase(this->pastPositions.begin());
 
 	// update position based on velocity
 	this->position.x += this->velocity.x * dt_ms;
@@ -138,6 +161,16 @@ void Ball::paddleRelease(int windowWidth, int windowHeight, Vector2f paddlePos) 
 }
 
 void Ball::draw(RenderWindow* window) {
+	if (this->state == FREE) {
+		for (int i = 0; i < 9; i++) {
+			// get most oldest-newest positions to draw effect
+			Vector2f posToDraw = this->pastPositions.at(i);
+			this->shape2.setRadius(this->radius / 9 * i);
+			this->shape2.setFillColor(Color(255, 255, 255, 255 * (i + 1) / 10));
+			this->shape2.setPosition(posToDraw.x - shape2.getRadius(), posToDraw.y - shape2.getRadius());
+			window->draw(this->shape2);
+		}
+	}
 	this->shape.setPosition(Vector2f(this->position.x - this->radius, this->position.y - this->radius));
 	window->draw(this->shape);
 }
